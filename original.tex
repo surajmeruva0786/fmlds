@@ -244,10 +244,10 @@ AUC     & 0.940 & 0.878 \\
 \end{tabular}
 \end{table}
 \subsubsection{Per-Class Performance}
-For a balanced test set of 150 samples (75 stress and 75 non-stress) the per-class classification report is shown in Table~\ref{tab:perclass_pipelineD}. While maintaining balanced macro and weighted averages across precision, recall, and F1-score, for the non-stress class, the results show slightly better detection performance.
+For a balanced test set of 150 samples (75 stress and 75 non-stress) the per-class classification report is shown in Table~\ref{tab:perclass_pipelineD}. The results show that the stress class achieves higher recall (0.8667), indicating strong sensitivity in detecting stress, while the non-stress class achieves higher precision (0.8507); the macro and weighted averages remain balanced across precision, recall, and F1-score.
 \begin{table}[htpb]
 \centering
-\caption{TABLE III: Per-Class Classification Report for UA-HybridNet}
+\caption{Per-Class Classification Report for UA-HybridNet}
 \label{tab:perclass_pipelineD}
 \footnotesize
 \setlength{\tabcolsep}{3pt}
@@ -256,10 +256,10 @@ For a balanced test set of 150 samples (75 stress and 75 non-stress) the per-cla
 \hline
 \textbf{Class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1 Score} & \textbf{Support} \\
 \hline
-Stress     & 0.8500 & 0.7600 & 0.8000 & 75 \\
-Non-Stress & 0.7800 & 0.8700 & 0.8200 & 75 \\
-\textbf{Macro Avg}    & \textbf{0.8200} & \textbf{0.8100} & \textbf{0.8100} & \textbf{150} \\
-\textbf{Weighted Avg} & \textbf{0.8200} & \textbf{0.8100} & \textbf{0.8100} & \textbf{150} \\
+Stress     & 0.7831 & 0.8667 & 0.8228 & 75 \\
+Non-Stress & 0.8507 & 0.7600 & 0.8028 & 75 \\
+\textbf{Macro Avg}    & \textbf{0.8169} & \textbf{0.8133} & \textbf{0.8128} & \textbf{150} \\
+\textbf{Weighted Avg} & \textbf{0.8169} & \textbf{0.8133} & \textbf{0.8128} & \textbf{150} \\
 \hline
 \end{tabular}
 \end{table}
