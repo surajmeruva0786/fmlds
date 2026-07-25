@@ -82,7 +82,7 @@ Regular stress assessment methods, such as self-reported questionnaires, intervi
 
 Recent improvements in deep learning and affective computing have enabled the development of stress recognition systems that analyze multimodal signals, including facial expressions and speech patterns. Audio-visual datasets such as RAVDESS facilitate structured modeling of emotion-related stress states through synchronized speech and facial recordings \cite{ref5}. Deep neural networks, particularly convolutional and spatiotemporal architectures, have demonstrated strong capabilities for extracting representations from facial dynamics and acoustic features \cite{ref6,ref7,ref8}. 
 
-To improve multimodal prediction performance, this study uses a hybrid deep learning system consisting of 3D convolutional neural networks for spatial-temporal facial modeling, EfficientNet-B0 for spatial feature extraction, an Action Unit (AU) gating system, and an audio convolutional branch. The system also relies on uncertainty-aware mechanisms to enhance reliability and deployment safety.
+To improve multimodal prediction performance, this study uses a hybrid deep learning system consisting of 3D convolutional neural networks for spatial-temporal facial modeling, EfficientNet-B0 for spatial feature extraction, cross-modal attention fusion, and an audio convolutional branch. The system also relies on uncertainty-aware mechanisms to enhance reliability and deployment safety.
 
 The proposed framework combines Monte Carlo Dropout for predictive uncertainty estimation, temperature scaling for confidence calibration, test-time augmentation for robustness, and selective prediction for exclusion of ambiguous samples. Monte Carlo Dropout approximates Bayesian inference through stochastic forward passes, allowing computation of predictive mean and variance. Temperature scaling corrects overconfident probability estimates without affecting classification accuracy. Selective prediction allows the system to reject high-uncertainty predictions, improving reliability in safety-critical environments. 
 
@@ -91,7 +91,7 @@ The experimental analysis includes a comparative study of baseline CNN-LSTM, tra
 The main contributions of this work are:
 
 \begin{itemize}
-\item An uncertainty-aware multimodal stress detection framework combining 3D-CNN, EfficientNet-B0, and AU gating.
+\item An uncertainty-aware multimodal stress detection framework combining 3D-CNN, EfficientNet-B0, and cross-modal attention fusion.
 \item Integration of Monte Carlo Dropout and temperature scaling for uncertainty estimation and probability calibration.
 \item Comprehensive evaluation using calibration metrics, uncertainty AUROC, and risk–coverage analysis.
 \item Selective prediction strategy to improve reliability in safety-critical stress monitoring applications.
@@ -159,26 +159,17 @@ In parallel, the acoustic branch encodes speech features into an audio sequence 
 
 \subsection{Multimodal Feature Fusion}
 
-The speech and facial signals carry complementary information, so we combine them in two simple steps: cross-modal attention and Action-Unit (AU) gating.
+The speech and facial signals carry complementary information, so we combine them using cross-modal attention followed by feature concatenation.
 
-\textbf{Step 1 -- Cross-modal attention.} Cross-attention lets one modality look at the most relevant parts of the other. We write $\mathrm{MHA}(Q,K,V)$ for multi-head attention (with query $Q$, key $K$, and value $V$) and $\mathrm{LN}(\cdot)$ for layer normalization, and define the operator $\mathrm{CA}(Q,K)=\mathrm{LN}(Q+\mathrm{MHA}(Q,K,K))$. Using the pooled vector of one modality as the query and the frame sequence of the other as key and value, we get an audio-aware visual vector $\tilde{v}$ and a visual-aware audio vector $\tilde{a}$:
+Cross-attention lets one modality look at the most relevant parts of the other. We write $\mathrm{MHA}(Q,K,V)$ for multi-head attention (with query $Q$, key $K$, and value $V$) and $\mathrm{LN}(\cdot)$ for layer normalization, and define the operator $\mathrm{CA}(Q,K)=\mathrm{LN}(Q+\mathrm{MHA}(Q,K,K))$. Using the pooled vector of one modality as the query and the frame sequence of the other as key and value, we get an audio-aware visual vector $\tilde{v}$ and a visual-aware audio vector $\tilde{a}$:
 \begin{equation}
 \tilde{v} = \mathrm{CA}(f_v, F_a), \quad \tilde{a} = \mathrm{CA}(f_a, F_v).
 \end{equation}
 
-\textbf{Step 2 -- AU gating.} We then join the three vectors into one fused vector and let the facial Action Units decide how much of it to keep. Here $\oplus$ is concatenation, $\odot$ is element-wise multiplication, $\sigma(\cdot)$ is the sigmoid, and $u$ is the AU feature vector; $W_1, W_2, b_1, b_2$ and $W_f$ are learned weights. The fused vector $f$, the gate $g$ (with values between $0$ and $1$), and the gated feature $z$ are:
-\begin{equation}
-\begin{aligned}
-f &= [\,f_s \oplus \tilde{v} \oplus \tilde{a}\,], \\
-g &= \sigma\!\left(W_2\,\mathrm{ReLU}(W_1 u + b_1) + b_2\right), \\
-z &= (W_f f) \odot g.
-\end{aligned}
-\end{equation}
-
-The gate $g$ keeps expression-related features and suppresses the rest, giving a representation that reflects the facial and speech cues linked to stress. Such multimodal fusion is widely used in affective computing to make predictions more robust~\cite{ref2}.
+These attended vectors are concatenated with the short-term visual vector to form the fused representation $f = [\,f_s \oplus \tilde{v} \oplus \tilde{a}\,]$, where $\oplus$ denotes concatenation. This representation captures the facial and speech cues linked to stress. Such multimodal fusion is widely used in affective computing to make predictions more robust~\cite{ref2}.
 \subsection{Model Training and Stress Classification}
 
-The gated feature $z$ passes through fully connected layers that output a single number, the logit $\ell = \phi(z)$; a larger logit means the model leans towards \textit{Stress}. Instead of turning this logit into a probability directly, we first divide it by a temperature $T$, a simple step that makes the confidence scores more trustworthy (better calibrated). The stress probability is
+The fused feature $f$ passes through fully connected layers that output a single number, the logit $\ell = \phi(f)$; a larger logit means the model leans towards \textit{Stress}. Instead of turning this logit into a probability directly, we first divide it by a temperature $T$, a simple step that makes the confidence scores more trustworthy (better calibrated). The stress probability is
 \begin{equation}
 p = \sigma(\ell / T),
 \end{equation}
@@ -223,7 +214,7 @@ A lower ECE means the model's confidence is more reliable.
 
 \section{Results and Discussion}
 
-This section provides a comprehensive analysis of \textbf{UA-HybridNet}, which combines uncertainty estimation and probability calibration with the Hybrid (3D-CNN + EfficientNet-B0 + AU) architecture.
+This section provides a comprehensive analysis of \textbf{UA-HybridNet}, which combines uncertainty estimation and probability calibration with the Hybrid (3D-CNN + EfficientNet-B0 + Cross-Attention) architecture.
 
 \subsection{Experimental Setup}
 The 1000 clips were divided using a 70/15/15 stratified split (seed 42), giving 700 training, 150 validation, and 150 test samples with balanced classes. Partitioning was performed at the clip level by stratified random sampling, so clips from the same actor may span splits; the evaluation is thus not strictly subject-independent (see Limitations). All hyperparameters are listed in Table~\ref{tab:exp_config}.
@@ -273,7 +264,7 @@ Baseline (CNN-2D + LSTM)
   & \textbf{0.885} & \textbf{0.860} & 0.920 & \textbf{0.889} & \textbf{0.971} & No \\
 Cross-Attention (Dual-Stream)
   & 0.790 & 0.790 & 0.790 & 0.790 & 0.890 & No \\
-Hybrid (3D-CNN + EfficientNet-B0 + Aux.)
+Hybrid (3D-CNN + EfficientNet-B0)
   & 0.850 & 0.802 & \textbf{0.930} & 0.861 & 0.940 & No \\
 Hybrid + Uncertainty Modeling
   & 0.813 & 0.783 & 0.867 & 0.823 & 0.878 & \textbf{Yes} \\
@@ -460,7 +451,7 @@ Next, the size of the dataset is quite modest compared with other large-scale de
 \section{Conclusion}
 
 
-To detect facial stress, this research proposed an uncertainty-aware deep learning system which combines probabilistic calibration and uncertainty estimation with hybrid feature learning. The proposed model involves Action Unit gating with the Monte-Carlo Dropout and temperature scaling, EfficientNet-B0 spatial feature extraction, and 3D-CNN spatio-temporal encoding. A very strong classification performance is shown by the experimental findings on the RAVDESS dataset, with an accuracy of 0.8133 and an AUC of 0.8782. By reducing the negative log-likelihood by 45.1\% and the Expected Calibration Error (ECE) from 0.1768 to 0.0710, the calibration is greatly improved by temperature scaling and showed an increased agreement between actual accuracy and expected confidence.
+To detect facial stress, this research proposed an uncertainty-aware deep learning system which combines probabilistic calibration and uncertainty estimation with hybrid feature learning. The proposed model combines Monte-Carlo Dropout and temperature scaling with EfficientNet-B0 spatial feature extraction, 3D-CNN spatio-temporal encoding, and cross-modal attention fusion. A very strong classification performance is shown by the experimental findings on the RAVDESS dataset, with an accuracy of 0.8133 and an AUC of 0.8782. By reducing the negative log-likelihood by 45.1\% and the Expected Calibration Error (ECE) from 0.1768 to 0.0710, the calibration is greatly improved by temperature scaling and showed an increased agreement between actual accuracy and expected confidence.
 Selective prediction further improved the system dependability: accuracy increased to 0.8333 and AUC to 0.8999 at a 20\% rejection rate. These results show that uncertainty estimation improves the overall reliability and successfully detects the incorrect predictions. 
 
 Thus, the proposed model gives a useful and reliable foundation for applications requiring human-computer interaction, evaluation of workplace well-being, and stress monitoring in healthcare.
