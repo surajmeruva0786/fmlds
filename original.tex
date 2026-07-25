@@ -139,55 +139,87 @@ Temporal segmentation divides video data into smaller sequences to capture motio
 Similarly, audio signals are divided into short intervals to generate spectrogram representations that capture speech dynamics related to stress.
 \subsection{Feature Extraction Using Deep Learning}
 
-    Deep learning architectures that automatically learns selective features on visual and acoustic modalities.
+Deep learning architectures automatically learn discriminative features from the visual and acoustic modalities. Throughout, $d$ denotes the common embedding dimension shared by all branches.
 
 \begin{itemize}
 
 \item \textbf{3D Convolutional Neural Network (3D-CNN)}
 
-The 3D-CNN model extracts spatio-temporal features from facial video sequences. In contrast to other 2D CNNs, 3D CNNs combine spatial and temporal dimensions of convolution, which allows the model to learn patterns of facial expressions~\cite{ref7}.
-
-\begin{equation}
-F_{out}(x,y,t) = \sum_{i}\sum_{j}\sum_{k} W(i,j,k) \cdot X(x+i,y+j,t+k)
-\end{equation}
-
-where $X$ represents the input feature volume and $W$ denotes the learnable 3D convolution kernel.
+The 3D-CNN extracts spatio-temporal features from the facial video sequence, jointly modelling the spatial and temporal dimensions of convolution to learn dynamic patterns of facial expressions~\cite{ref7}. Its output is a short-term visual feature vector $f_s \in \mathbb{R}^{d}$.
 
 \item \textbf{EfficientNet-B0}
 
+High-level spatial features are extracted from each facial frame using EfficientNet-B0, which employs compound scaling to balance network depth, width, and input resolution for efficient feature learning with fewer parameters~\cite{ref6}. The per-frame embeddings are refined by a Transformer encoder, yielding a frame-level visual sequence $F_v \in \mathbb{R}^{L_v \times d}$ and a pooled visual vector $f_v \in \mathbb{R}^{d}$, where $L_v$ is the number of frames.
 
-From the facial frame the high-level spatial features are extracted using the EfficientNet-B0. EfficientNet employs compound scaling to balance network depth, width, and input resolution, enabling efficient feature learning with fewer parameters~\cite{ref6}.
-\begin{equation}
-Depth = \alpha^{\phi}, \quad Width = \beta^{\phi}, \quad Resolution = \gamma^{\phi}
-\end{equation}
+\item \textbf{Audio Branch}
 
-subject to
-\begin{equation}
-\alpha \cdot \beta^2 \cdot \gamma^2 \approx 2
-\end{equation}
-
-where $\phi$ controls the scaling coefficient of the network.
+In parallel, the acoustic branch encodes speech features into an audio sequence $F_a \in \mathbb{R}^{L_a \times d}$ and a pooled audio vector $f_a \in \mathbb{R}^{d}$, where $L_a$ is the number of audio frames.
 
 \end{itemize}
 
 \subsection{Multimodal Feature Fusion}
 
-In order to use the complementary information provided by the speech and facial modalities, we have used Feature-level fusion. The visual and audio feature vectors are obtained and merged together to have a unified representation. 
+The speech and facial signals carry complementary information, so we combine them in two simple steps: cross-modal attention and Action-Unit (AU) gating.
+
+\textbf{Step 1 -- Cross-modal attention.} Cross-attention lets one modality look at the most relevant parts of the other. We write $\mathrm{MHA}(Q,K,V)$ for multi-head attention (with query $Q$, key $K$, and value $V$) and $\mathrm{LN}(\cdot)$ for layer normalization, and define the operator $\mathrm{CA}(Q,K)=\mathrm{LN}(Q+\mathrm{MHA}(Q,K,K))$. Using the pooled vector of one modality as the query and the frame sequence of the other as key and value, we get an audio-aware visual vector $\tilde{v}$ and a visual-aware audio vector $\tilde{a}$:
 \begin{equation}
-F_{fusion} = [F_{visual} \oplus F_{audio}]
+\tilde{v} = \mathrm{CA}(f_v, F_a), \quad \tilde{a} = \mathrm{CA}(f_a, F_v).
 \end{equation}
 
-where $\oplus$ represents feature concatenation.
+\textbf{Step 2 -- AU gating.} We then join the three vectors into one fused vector and let the facial Action Units decide how much of it to keep. Here $\oplus$ is concatenation, $\odot$ is element-wise multiplication, $\sigma(\cdot)$ is the sigmoid, and $u$ is the AU feature vector; $W_1, W_2, b_1, b_2$ and $W_f$ are learned weights. The fused vector $f$, the gate $g$ (with values between $0$ and $1$), and the gated feature $z$ are:
+\begin{equation}
+\begin{aligned}
+f &= [\,f_s \oplus \tilde{v} \oplus \tilde{a}\,], \\
+g &= \sigma\!\left(W_2\,\mathrm{ReLU}(W_1 u + b_1) + b_2\right), \\
+z &= (W_f f) \odot g.
+\end{aligned}
+\end{equation}
 
-To utilise its multimodal representation, the model is capable of obtaining dynamics of facial expressions and speech characteristics that are concerned with stress. Multimodal fusion techniques have found wide application in affective computing to enhance the robustness and reliability of prediction ~\cite{ref2}.
+The gate $g$ keeps expression-related features and suppresses the rest, giving a representation that reflects the facial and speech cues linked to stress. Such multimodal fusion is widely used in affective computing to make predictions more robust~\cite{ref2}.
 \subsection{Model Training and Stress Classification}
 
-To classify the fused feature vector, we have applied fully connected layers. The final prediction layer predicts the probability distribution of stress classes using the SoftMax activation function.
+The gated feature $z$ passes through fully connected layers that output a single number, the logit $\ell = \phi(z)$; a larger logit means the model leans towards \textit{Stress}. Instead of turning this logit into a probability directly, we first divide it by a temperature $T$, a simple step that makes the confidence scores more trustworthy (better calibrated). The stress probability is
 \begin{equation}
-P(y=k|x) = \frac{e^{z_k}}{\sum_{j=1}^{K} e^{z_j}}
+p = \sigma(\ell / T),
 \end{equation}
 
-Two classification, \textit{Stress} and \textit{Non-Stress}, corresponds to the final output as a task of binary classification. During training, to optimize the model's parameters we have used backpropagation. Standard metrics, such as accuracy, precision, recall, F1-score, and Area Under the Curve (AUC), are used to evaluate performance and are also frequently used to assess the stress detection systems in machine learning research.
+where $\sigma(\cdot)$ is the sigmoid. We choose the best temperature $T^{*}$ on the validation set so that the predicted probabilities match the true labels as closely as possible, i.e. by minimizing the negative log-likelihood (NLL) over the $N$ samples with labels $y_i \in \{0,1\}$ and logits $\ell_i$:
+\begin{equation}
+\begin{split}
+T^{*} = \arg\min_{T>0} -\frac{1}{N}\sum_{i=1}^{N}\big[\, & y_i \log \sigma(\ell_i/T) \\
+& + (1-y_i)\log\big(1-\sigma(\ell_i/T)\big) \big].
+\end{split}
+\end{equation}
+
+This yields $T^{*}=3.0855$. The network is trained with backpropagation using binary cross-entropy on the logits, and we report the standard metrics: accuracy, precision, recall, F1-score, and Area Under the Curve (AUC).
+
+\subsection{Uncertainty-Aware Prediction}
+
+A single prediction does not tell us how sure the model is. To measure confidence we use Monte Carlo (MC) Dropout: we keep dropout switched on during testing and run the same input $M=20$ times, each run giving a slightly different probability $p_t = \sigma(\ell_t/T^{*})$. If the runs agree the model is confident; if they disagree it is uncertain. We summarise the runs by their mean $\bar{p}$ and variance:
+\begin{equation}
+\begin{aligned}
+\bar{p} &= \frac{1}{M}\sum_{t=1}^{M} p_t, \\
+\mathrm{Var} &= \frac{1}{M}\sum_{t=1}^{M} (p_t - \bar{p})^2.
+\end{aligned}
+\end{equation}
+
+A larger variance means higher uncertainty. Uncertainty can also be measured with entropy. Using the binary entropy $H(p) = -[\,p\ln p + (1-p)\ln(1-p)\,]$, the total uncertainty is the entropy of the mean, $H(\bar{p})$, while the part caused by the model itself (epistemic uncertainty) is the mutual information $I$:
+\begin{equation}
+\begin{aligned}
+H(\bar{p}) &= -[\,\bar{p}\ln\bar{p} + (1-\bar{p})\ln(1-\bar{p})\,], \\
+I &= H(\bar{p}) - \frac{1}{M}\sum_{t=1}^{M} H(p_t).
+\end{aligned}
+\end{equation}
+
+Finally, the model can choose not to answer when it is unsure. Let $u(x)$ be the uncertainty of a sample (its variance or entropy) and $\alpha \in [0,1]$ the fraction of samples we allow it to skip. Keeping only the most confident samples---those with $u(x) \le \eta_\alpha$, where $\eta_\alpha$ is the matching threshold---gives a coverage of $1-\alpha$. We check how well confidence matches accuracy using the Expected Calibration Error (ECE), computed over $B$ confidence bins $\mathcal{B}_b$:
+\begin{equation}
+\begin{gathered}
+\hat{y}(x)\ \text{is predicted only if}\ u(x) \le \eta_\alpha, \\
+\mathrm{ECE} = \sum_{b=1}^{B} \frac{|\mathcal{B}_b|}{N}\,\big|\mathrm{acc}(\mathcal{B}_b) - \mathrm{conf}(\mathcal{B}_b)\big|.
+\end{gathered}
+\end{equation}
+
+A lower ECE means the model's confidence is more reliable.
 
 \section{Results and Discussion}
 
