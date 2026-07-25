@@ -127,7 +127,7 @@ Figure~\ref{fig:sample} illustrates the proposed multimodal stress detection fra
 
 \subsection{Dataset}
 
-The publicly available RAVDESS dataset is used in this study. It contains audio–visual recordings of speeches with different emotional expressions performed by 24 professional actors (12 male and 12 female)~\cite{ref5}. Eight emotional states—neutral, calm, happy, sad, angry, fearful, disgusted, and surprised—are expressed by each actor. The recordings include high-quality video synchronized with speech signals. For stress detection, emotions like anger, fear, and sadness are categorized as stress-related, while calm and neutral are considered non-stress. RAVDESS contains controlled, synchronized audio and video recordings suitable for testing multimodal learning architectures. The structured nature of the dataset enables evaluation of calibration and uncertainty mechanisms. Future work will expand UA-HybridNet to real-world stress datasets and in-the-wild recordings.
+The publicly available RAVDESS dataset is used in this study. It contains audio–visual recordings of speeches with different emotional expressions performed by 24 professional actors (12 male and 12 female)~\cite{ref5}. Eight emotional states—neutral, calm, happy, sad, angry, fearful, disgusted, and surprised—are expressed by each actor. The recordings include high-quality video synchronized with speech signals. For stress detection, emotions like anger, fear, and sadness are categorized as stress-related, while calm and neutral are considered non-stress. RAVDESS contains controlled, synchronized audio and video recordings suitable for testing multimodal learning architectures. Fixed-length 2-second clips were extracted with a 0.5-second sliding-window stride, yielding a balanced set of 1000 samples (500 stress, 500 non-stress). The structured nature of the dataset enables evaluation of calibration and uncertainty mechanisms. Future work will expand UA-HybridNet to real-world stress datasets and in-the-wild recordings.
 
 \subsection{Data Preprocessing}
 
@@ -192,6 +192,32 @@ Two classification, \textit{Stress} and \textit{Non-Stress}, corresponds to the 
 \section{Results and Discussion}
 
 This section provides a comprehensive analysis of \textbf{UA-HybridNet}, which combines uncertainty estimation and probability calibration with the Hybrid (3D-CNN + EfficientNet-B0 + AU) architecture.
+
+\subsection{Experimental Setup}
+The 1000 clips were divided using a 70/15/15 stratified split (seed 42), giving 700 training, 150 validation, and 150 test samples with balanced classes. Partitioning was performed at the clip level by stratified random sampling, so clips from the same actor may span splits; the evaluation is thus not strictly subject-independent (see Limitations). All hyperparameters are listed in Table~\ref{tab:exp_config}.
+
+\begin{table}[H]
+\centering
+\caption{Experimental Configuration}
+\label{tab:exp_config}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{llll}
+\hline
+\textbf{Parameter} & \textbf{Value} & \textbf{Parameter} & \textbf{Value} \\
+\hline
+Total samples      & 1000 (500/500) & Dropout rate       & 0.3 \\
+Train/Val/Test     & 700/150/150    & MC Dropout ($T$)   & 20 \\
+Split              & 70/15/15 strat.& TTA copies ($N$)   & 5 \\
+Optimizer          & AdamW (wd $10^{-5}$) & Temperature ($T$) & 3.0855 \\
+Learning rate      & $10^{-4}$      & Precision          & 16-bit mixed \\
+Batch size         & 4 (eff.\ 16)   & Random seed        & 42 \\
+LR schedule        & Cosine anneal. & Max epochs         & 100 (pat.\ 20) \\
+\hline
+\end{tabular}
+\end{table}
+
 \subsection{Performance Analysis}
 
 \subsubsection{Overall Classification Performance}
@@ -397,7 +423,7 @@ In application of safety-sensitive stress monitoring, where overconfident, incor
 \subsection{Limitations}
 Although the proposed framework demonstrates encouraging performance, it still has several drawbacks. 
 Firstly, the applicability to real-world settings may be impacted since the RAVDESS dataset includes performed emotional expressions rather than spontaneous real-world stress signals. 
-Next, the size of the dataset is quite modest compared with other large-scale deep learning datasets. Larger multimodal datasets and real-time deployment situations will be the focus of future research.
+Next, the size of the dataset is quite modest compared with other large-scale deep learning datasets. Larger multimodal datasets and real-time deployment situations will be the focus of future research. Because samples were split at the clip level, clips from the same actor may occur across splits, so results are not strictly subject-independent; a leave-actors-out protocol is planned as future work.
 
 \section{Conclusion}
 
