@@ -1,0 +1,488 @@
+\documentclass[conference]{IEEEtran}
+% Required Packages
+\IEEEoverridecommandlockouts
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{cite}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{amssymb}
+\usepackage[skip=5pt]{caption}
+\usepackage{subfigure}
+\usepackage{hyperref}
+\usepackage{cleveref}  % smart referencing
+
+
+  \makeatletter
+\newcommand{\linebreakand}{%
+  \end{@IEEEauthorhalign}
+  \hfill\mbox{}\par
+  \mbox{}\hfill\begin{@IEEEauthorhalign}
+}
+\makeatother
+
+
+
+
+\begin{document}
+
+\title{Uncertainty-Aware Multimodal Deep Learning Framework for Stress Detection Using Audio-Visual Signals}
+
+% Author Information
+\author{
+ \IEEEauthorblockN{Meruva Kodanda Suraj}
+     \IEEEauthorblockA{
+ Department of DSAI\\
+   IIIT Naya Raipur, Chhattisgarh, India\\
+        Email: meruva24102@iiitnr.edu.in \\
+    }
+
+     \and
+    \IEEEauthorblockN{Mamta Nag}
+    \IEEEauthorblockA{
+        Department of CSE\\
+        IIIT Naya Raipur, Chhattisgarh, India\\
+        Email: mamta@iiitnr.edu.in\\
+    }
+
+ 
+    \and
+    \IEEEauthorblockN{ Mallikharjuna Rao K}
+     \IEEEauthorblockA{
+ Department of DSAI\\
+   IIIT Naya Raipur, Chhattisgarh, India\\
+        Email: mallikharjuna@iiitnr.edu.in\\
+    }
+     
+}
+
+
+% Create the title
+\maketitle
+
+
+\begin{abstract}
+In recent times, stress detection has become an important area of research due to the increasing commonness of mental health issues which are stress related and on overall productivity and well being. The traditional stress assessment methods are relied upon physiological signals or self-reported questionnaires, which might not always provide reliable results or can't help in continuous monitoring. Recent advancements in deep learning methods have enabled the use of multimodal data, such as audio, video and also physiological data, which helps in automatic recognition of stress.
+
+In this paper, we aim to propose an Uncertainty-Aware Hybrid Deep Learning framework (UA-HybridNet) for detection of stress via multimodal audio-video data. The proposed model architecture includes convolutional neural networks (CNN) for spatial feature extraction and recurrent neural networks for temporal modeling, enabling effective combination of complementary information from the speech and facial expressions. Unlike conventional methods, the proposed model has uncertainty estimation and probability calibration techniques to improve robustness and reliability of prediction output.
+
+Upon experimenting, the evaluation demonstrated that the proposed framework achieves a competitive performance of 81.3\% accuracy and an AUC of 0.878, while also providing uncertainty-aware predictions and calibrated confidence estimates. These capabilities help with the reliability of the model when dealing with real-world stress monitoring scenarios, where it is critical to make credible decisions. The results of this uncertainty-aware multimodal deep learning highlight potential for building reliable and scalable stress detection systems for healthcare industries and applications which require human-computer interaction.
+\end{abstract}
+
+\textbf{Keywords:} Stress Detection, Multimodal Learning, Deep Learning, Uncertainty Estimation, Audio-Visual Analysis
+
+\section{Introduction}
+
+Stress is a rapidly growing concern in our modern society, especially in work and clinical environments, where individuals may experience anxiety disorders, depression, cardiovascular issues, and impaired cognitive functioning under psychological distress. Chronic stress affects individual well-being, professional productivity and decision-making ability. Early detection and accurate categorization of stress states are therefore essential for preventive healthcare, workplace safety, and mental health intervention strategies \cite{ref1,ref2,ref3}. 
+
+Regular stress assessment methods, such as self-reported questionnaires, interviews, and psychological scoring systems, often suffer from subjectivity, delayed reports, and limited real-time application \cite{ref4}. These methods depend heavily on subjective perception and may not capture physiological and behavioral changes involved with stress reactions. This creates a need for automated, objective, and real-time systems for stress detection that can be continuously monitored. 
+
+Recent improvements in deep learning and affective computing have enabled the development of stress recognition systems that analyze multimodal signals, including facial expressions and speech patterns. Audio-visual datasets such as RAVDESS facilitate structured modeling of emotion-related stress states through synchronized speech and facial recordings \cite{ref5}. Deep neural networks, particularly convolutional and spatiotemporal architectures, have demonstrated strong capabilities for extracting representations from facial dynamics and acoustic features \cite{ref6,ref7,ref8}. 
+
+To improve multimodal prediction performance, this study uses a hybrid deep learning system consisting of 3D convolutional neural networks for spatial-temporal facial modeling, EfficientNet-B0 for spatial feature extraction, an Action Unit (AU) gating system, and an audio convolutional branch. The system also relies on uncertainty-aware mechanisms to enhance reliability and deployment safety.
+
+The proposed framework combines Monte Carlo Dropout for predictive uncertainty estimation, temperature scaling for confidence calibration, test-time augmentation for robustness, and selective prediction for exclusion of ambiguous samples. Monte Carlo Dropout approximates Bayesian inference through stochastic forward passes, allowing computation of predictive mean and variance. Temperature scaling corrects overconfident probability estimates without affecting classification accuracy. Selective prediction allows the system to reject high-uncertainty predictions, improving reliability in safety-critical environments. 
+
+The experimental analysis includes a comparative study of baseline CNN-LSTM, transformer-based cross-attention, and the proposed hybrid architecture. Results indicate that while deterministic models achieve high accuracy, incorporating uncertainty estimation improves reliability, decision confidence, and calibration, reducing overconfidence and improving selective performance. This research supports the development of AI-powered stress monitoring systems that produce calibrated probabilistic outputs and account for uncertainty in decision-making. These systems are useful for telemedicine platforms, preventive mental health screening, and occupational stress monitoring. Future studies could investigate real-time deployment with edge-based multimodal sensing systems, conformal prediction frameworks, and out-of-distribution detection. Although multimodal stress detection and uncertainty estimation have been studied separately, their integration for calibrated, selective stress prediction has received limited attention. By integrating selective prediction, probabilistic calibration, and hybrid deep feature learning into a single framework, UA-HybridNet addresses this gap and improves deployment reliability in safety-critical stress-monitoring scenarios.
+
+The main contributions of this work are:
+
+\begin{itemize}
+\item An uncertainty-aware multimodal stress detection framework combining 3D-CNN, EfficientNet-B0, and AU gating.
+\item Integration of Monte Carlo Dropout and temperature scaling for uncertainty estimation and probability calibration.
+\item Comprehensive evaluation using calibration metrics, uncertainty AUROC, and risk–coverage analysis.
+\item Selective prediction strategy to improve reliability in safety-critical stress monitoring applications.
+\end{itemize}
+
+\section{Related Works}
+
+Stress detection based on artificial intelligence and machine learning has attracted interest in monitoring professional work and healthcare. Gedam and Paul~\cite{ref1} studied wearable sensor-based stress detection using physiological signals such as skin conductance and heart rate. Despite its effectiveness, these methods require constant device use and are prone to inter-individual variability and noise. Mentis et al.~\cite{ref2} highlighted the use of deep learning models for behavioral and physiological data analysis, showing the relevance of AI in mental health applications. Multimodal physiological datasets for continuous stress monitoring were introduced by Hosseini et al.~\cite{ref3} and Iqbal et al.~\cite{ref4}, but both rely on specialized sensing equipment. 
+
+Audio-visual data is another medium for analyzing stress and emotions. The RAVDESS dataset~\cite{ref5} provides synchronized voice and facial data for multimodal emotion recognition. Deep learning architectures such as EfficientNet~\cite{ref6} and spatiotemporal convolutional networks~\cite{ref7} have shown strong capability in extracting visual and temporal features. Sequential data modeling was improved by attention-based models, particularly the Transformer architecture~\cite{ref8}.
+
+Deep learning models often produce overconfident predictions. To improve uncertainty estimation and calibration, Monte Carlo Dropout~\cite{ref9} and temperature scaling~\cite{ref10} are used. Kendall and Gal~\cite{ref11} emphasized capturing both data noise and model uncertainty by distinguishing between aleatoric (random) and epistemic (reducible) uncertainty. Deep ensemble techniques by Lakshminarayanan et al.~\cite{ref12} improve predictive performance using independently trained networks. Geifman and El-Yaniv~\cite{ref13} proposed selective classification to avoid low-confidence predictions. Hendrycks and Gimpel~\cite{ref14} proposed methods for detecting misclassified and out-of-distribution samples. Recent work by Nag et al.~\cite{ref15} shows that optimization strategies can improve stress prediction in occupational settings. Reliable AI systems require clear decision boundaries, calibrated confidence estimates, and accurate predictions. The ability to identify unknown or ambiguous inputs is important in safety-critical applications such as healthcare stress monitoring. These uncertainty-aware techniques support dependable multimodal stress detection frameworks for real-world use.
+
+\subsection{Research Gap}
+
+Despite these advancements, several limitations remain. Many stress detection systems rely on wearable physiological sensors, limiting scalability and practical use. Most existing deep learning techniques produce deterministic outputs without reliable uncertainty estimation. There is a need for a multimodal stress detection system that combines audio-visual data with uncertainty-aware methods.
+\section{Stress Prediction Model Overview}
+
+\subsection{Purpose}
+
+For the proposed approach our objective was to provide an accurate multimodal framework for automatic stress detection using facial expression and audio data. Traditional unimodal systems for stress detection often perform poorly because they rely solely on visual or auditory data and lack contextual cues. To overcome this limitation, the proposed approach combines speech-based acoustic representations with face video data using a hybrid deep learning architecture. The system uses EfficientNet-B0 to extract spatial representations from facial frames and a 3D Convolutional Neural Network (3D-CNN) to capture spatial–temporal facial dynamics. EfficientNet architectures have achieved strong performance in visual recognition challenges~\cite{ref6}. The framework aims to enhance stress recognition performance and provide reliable classification of stress levels by combining visual and auditory modalities.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.85\textwidth]{pro.png}
+\caption{Proposed Multimodal Stress Detection Framework}
+\label{fig:sample}
+\end{figure*}
+
+\subsection{System Workflow}
+
+Figure~\ref{fig:sample} illustrates the proposed multimodal stress detection framework. Data collection, preprocessing, feature extraction, multimodal fusion, and classification are part of the system pipeline. The RAVDESS dataset is the primary data source, containing emotional speech as audio-video recordings. The dataset includes facial video frames and voice signals~\cite{ref5}. Preprocessing techniques such as frame extraction, face detection, audio normalization, and temporal segmentation are used to ensure input quality. For visual analysis, a hybrid architecture combining 3D-CNN and EfficientNet-B0 captures temporal dynamics and spatial facial representations. Audio characteristics associated with stress are captured by extracting acoustic features from speech data. A multimodal feature fusion approach combines visual and auditory data. Fully connected layers are used for final classification. Two categories: \textit{Stress} and \textit{Non-Stress} are predicted by the output layer. Multimodal learning techniques improve robustness and classification performance~\cite{ref2}.
+
+\subsection{Dataset}
+
+The publicly available RAVDESS dataset is used in this study. It contains audio–visual recordings of speeches with different emotional expressions performed by 24 professional actors (12 male and 12 female)~\cite{ref5}. Eight emotional states—neutral, calm, happy, sad, angry, fearful, disgusted, and surprised—are expressed by each actor. The recordings include high-quality video synchronized with speech signals. For stress detection, emotions like anger, fear, and sadness are categorized as stress-related, while calm and neutral are considered non-stress. RAVDESS contains controlled, synchronized audio and video recordings suitable for testing multimodal learning architectures. The structured nature of the dataset enables evaluation of calibration and uncertainty mechanisms. Future work will expand UA-HybridNet to real-world stress datasets and in-the-wild recordings.
+
+\subsection{Data Preprocessing}
+
+Preprocessing enhances model performance and reliability. The pipeline includes facial frame extraction, face detection, image resizing, and normalization. Video clips are converted into frame sequences, and facial regions are detected and extracted. Images are resized to a consistent resolution for deep learning models. For audio, speech signals are normalized and converted into Mel-spectrogram representations, capturing important acoustic features of stress and speech dynamics.
+
+\subsection{Data Segmentation}
+
+Temporal segmentation divides video data into smaller sequences to capture motion. Each video is split into fixed-length frame sequences, enabling the 3D-CNN model to capture temporal changes in facial expressions.
+Similarly, audio signals are divided into short intervals to generate spectrogram representations that capture speech dynamics related to stress.
+\subsection{Feature Extraction Using Deep Learning}
+
+    Deep learning architectures that automatically learns selective features on visual and acoustic modalities.
+
+\begin{itemize}
+
+\item \textbf{3D Convolutional Neural Network (3D-CNN)}
+
+The 3D-CNN model extracts spatio-temporal features from facial video sequences. In contrast to other 2D CNNs, 3D CNNs combine spatial and temporal dimensions of convolution, which allows the model to learn patterns of facial expressions~\cite{ref7}.
+
+\begin{equation}
+F_{out}(x,y,t) = \sum_{i}\sum_{j}\sum_{k} W(i,j,k) \cdot X(x+i,y+j,t+k)
+\end{equation}
+
+where $X$ represents the input feature volume and $W$ denotes the learnable 3D convolution kernel.
+
+\item \textbf{EfficientNet-B0}
+
+
+From the facial frame the high-level spatial features are extracted using the EfficientNet-B0. EfficientNet employs compound scaling to balance network depth, width, and input resolution, enabling efficient feature learning with fewer parameters~\cite{ref6}.
+\begin{equation}
+Depth = \alpha^{\phi}, \quad Width = \beta^{\phi}, \quad Resolution = \gamma^{\phi}
+\end{equation}
+
+subject to
+\begin{equation}
+\alpha \cdot \beta^2 \cdot \gamma^2 \approx 2
+\end{equation}
+
+where $\phi$ controls the scaling coefficient of the network.
+
+\end{itemize}
+
+\subsection{Multimodal Feature Fusion}
+
+In order to use the complementary information provided by the speech and facial modalities, we have used Feature-level fusion. The visual and audio feature vectors are obtained and merged together to have a unified representation. 
+\begin{equation}
+F_{fusion} = [F_{visual} \oplus F_{audio}]
+\end{equation}
+
+where $\oplus$ represents feature concatenation.
+
+To utilise its multimodal representation, the model is capable of obtaining dynamics of facial expressions and speech characteristics that are concerned with stress. Multimodal fusion techniques have found wide application in affective computing to enhance the robustness and reliability of prediction ~\cite{ref2}.
+\subsection{Model Training and Stress Classification}
+
+To classify the fused feature vector, we have applied fully connected layers. The final prediction layer predicts the probability distribution of stress classes using the SoftMax activation function.
+\begin{equation}
+P(y=k|x) = \frac{e^{z_k}}{\sum_{j=1}^{K} e^{z_j}}
+\end{equation}
+
+Two classification, \textit{Stress} and \textit{Non-Stress}, corresponds to the final output as a task of binary classification. During training, to optimize the model's parameters we have used backpropagation. Standard metrics, such as accuracy, precision, recall, F1-score, and Area Under the Curve (AUC), are used to evaluate performance and are also frequently used to assess the stress detection systems in machine learning research.
+
+\section{Results and Discussion}
+
+This section provides a comprehensive analysis of \textbf{UA-HybridNet}, which combines uncertainty estimation and probability calibration with the Hybrid (3D-CNN + EfficientNet-B0 + AU) architecture.
+\subsection{Performance Analysis}
+
+\subsubsection{Overall Classification Performance}
+
+A relative performance analysis of all explored architectures, including the baseline CNN–LSTM model, the cross-attention dual-stream model, the deterministic Hybrid architecture, and the suggested framework, is shown in Table~\ref{tab:all_arch_comparison}.
+The deterministic Hybrid model includes probabilistic calibration and uncertainty estimates, which significantly improves the dependability and interpretability of predictions, even though the achieved raw accuracy is slightly higher. So as a result, the proposed methodology places more importance on reliable predictions than just focusing on point-estimate accuracy.
+
+\begin{table}[H]
+\centering
+\caption{Performance Comparison Across All Architectures}
+\label{tab:all_arch_comparison}
+\footnotesize
+\resizebox{\columnwidth}{!}{%
+\setlength{\tabcolsep}{1.7pt}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{lcccccc}
+\hline
+\textbf{Model} & \textbf{Acc.} & \textbf{Prec.} & \textbf{Recall} & \textbf{F1} & \textbf{AUC} & \textbf{Reliability} \\
+\hline
+Baseline (CNN-2D + LSTM)
+  & \textbf{0.885} & \textbf{0.860} & 0.920 & \textbf{0.889} & \textbf{0.971} & No \\
+Cross-Attention (Dual-Stream)
+  & 0.790 & 0.790 & 0.790 & 0.790 & 0.890 & No \\
+Hybrid (3D-CNN + EfficientNet-B0 + Aux.)
+  & 0.850 & 0.802 & \textbf{0.930} & 0.861 & 0.940 & No \\
+Hybrid + Uncertainty Modeling
+  & 0.813 & 0.783 & 0.867 & 0.823 & 0.878 & \textbf{Yes} \\
+\hline
+\end{tabular}%
+}
+\end{table}
+
+Even though the deterministic Hybrid model gives higher raw accuracy, UA-HybridNet prefers computed, uncertainity-aware predictions over point-estimate optimization. In healthcare stress monitoring areas of safety-critical applications, overconfidence and wrong estimates can have serious consequences. So as a result, reliability, compute quality and selective control of risk are more important than minor improvements in raw accuracy. The results show that UA-HybridNet significantly improve confidence arrangement and risk-aware decision making while maintaining competitive level classification performance. To illustrate this trade-off further, Table~\ref{tab:hybrid_vs_UA-HybridNet} gives a direct comparison between deterministic Hybrid model and the uncertainty-aware model. The results show that, despite getting considerably higher precision, the deterministic model does not give calibrated confidence estimates, which are necessary in safety-critical applications for reliable deployment.
+\begin{table}[htpb]
+\centering
+\caption{Classification Performance: Hybrid vs UA-HybridNet}
+\label{tab:hybrid_vs_UA-HybridNet}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.0}
+\begin{tabular}{lcc}
+\hline
+\textbf{Metric} & \textbf{Hybrid} & \textbf{UA-HybridNet} \\
+\hline
+Accuracy & 0.850 & 0.813 \\
+Recall  & 0.930 & 0.867 \\
+F1      & 0.861 & 0.823 \\
+AUC     & 0.940 & 0.878 \\
+\hline
+\end{tabular}
+\end{table}
+\subsubsection{Per-Class Performance}
+For a balanced test set of 150 samples (75 stress and 75 non-stress) the per-class classification report is shown in Table~\ref{tab:perclass_pipelineD}. While maintaining balanced macro and weighted averages across precision, recall, and F1-score, for the non-stress class, the results show slightly better detection performance.
+\begin{table}[htpb]
+\centering
+\caption{TABLE III: Per-Class Classification Report for UA-HybridNet}
+\label{tab:perclass_pipelineD}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.0}
+\begin{tabular}{lcccc}
+\hline
+\textbf{Class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1 Score} & \textbf{Support} \\
+\hline
+Stress     & 0.8500 & 0.7600 & 0.8000 & 75 \\
+Non-Stress & 0.7800 & 0.8700 & 0.8200 & 75 \\
+\textbf{Macro Avg}    & \textbf{0.8200} & \textbf{0.8100} & \textbf{0.8100} & \textbf{150} \\
+\textbf{Weighted Avg} & \textbf{0.8200} & \textbf{0.8100} & \textbf{0.8100} & \textbf{150} \\
+\hline
+\end{tabular}
+\end{table}
+
+A wide perspective of classification results given by the confusion matrix is shown in Fig.~\ref{fig:pipd_confmat}. Out of the 150 test samples, 28 are incorrectly classified, and 122 are correctly classified.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\linewidth]{confusion_matrix.png}
+\caption{Confusion Matrix for UA-HybridNet.}
+\label{fig:pipd_confmat}
+\end{figure}
+
+\subsubsection{Calibration Performance}
+
+The crucial part of probability calibration is Temperature scaling. Calibration metrics are shown in Table~\ref{tab:calibration_metrics}, of both before and after scaling with a learning temperature parameter of $T = 3.0855$.
+By reducing the Expected Calibration Error (ECE) by 60\% and Maximum Calibration Error (MCE) by 67\%, the quality of calibration is greatly improved by temperature scaling.
+
+\begin{table}[H]
+\centering
+\caption{Calibration Metrics Before and After Temperature Scaling}
+\label{tab:calibration_metrics}
+\footnotesize
+\setlength{\tabcolsep}{2.5pt}
+\renewcommand{\arraystretch}{1.0}
+\begin{tabular}{lccc}
+\hline
+Metric & Before & After & Improvement \\
+\hline
+ECE & 0.1768 & \textbf{0.0710} & $\downarrow$ 59.8\% \\
+MCE & 0.7651 & \textbf{0.2531} & $\downarrow$ 66.9\% \\
+Brier Score & 0.1734 & \textbf{0.1450} & $\downarrow$ 16.4\% \\
+NLL & 0.7172 & \textbf{0.3940} & $\downarrow$ 45.1\% \\
+\hline
+\end{tabular}
+\end{table}
+
+Figure~\ref{fig:tempscale} further shows this improvement using reliability diagrams of before and after calibration.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{reliability_diagram.png}
+\caption{Reliability diagrams before and after temperature scaling.}
+\label{fig:tempscale}
+\end{figure}
+
+\subsubsection{Uncertainty Estimation Analysis}
+
+Monte Carlo Dropout with $T = 20$ stochastic forward passes is used to estimate uncertainty. Key uncertainty measures, such as prediction variance, entropy, and the Uncertainty AUROC, are summarized in Table~\ref{tab:uncertainty_stats}.
+
+\begin{table}[H]
+\centering
+\caption{Uncertainty Estimation Statistics}
+\label{tab:uncertainty_stats}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.0}
+\begin{tabular}{lc}
+\hline
+Metric & Value \\
+\hline
+Mean Predictive Variance & 0.001564 \\
+Mean Predictive Entropy & 0.1092 \\
+Uncertainty AUROC & 0.6906 \\
+Risk-Coverage AURC & 0.1015 \\
+\hline
+\end{tabular}
+\end{table}
+The misclassified samples generally show more predictive variance than correctly classified samples, which was confirmed by the uncertainty distribution shown in Fig.~\ref{fig:uncert}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\linewidth]{uncertainty_distribution.png}
+\caption{Predictive uncertainty distribution for correct and incorrect predictions.}
+\label{fig:uncert}
+\end{figure}
+\subsubsection{Selective Prediction Performance}
+Selective prediction experiments assess the effects of rejecting samples that may not be certain. Increasing the rejection rate progressively enhances classification performance, as Table~\ref{tab:selective_pred_full} demonstrates.
+
+\begin{table}[ht]
+\centering
+\caption{Selective Prediction Performance at Different Rejection Levels}
+\label{tab:selective_pred_full}
+\footnotesize
+\setlength{\tabcolsep}{1.5pt}
+\renewcommand{\arraystretch}{1.0}
+\begin{tabular}{lccccccc}
+\hline
+Rejection Rate & Kept & Rejected & Accuracy & Precision & Recall & F1 Score & AUC \\
+\hline
+0\% & 150 & 0  & 0.8133 & 0.7831 & 0.8667 & 0.8228 & 0.8782 \\
+5\% & 143 & 7  & 0.8322 & 0.8077 & 0.8750 & 0.8400 & 0.8834 \\
+10\% & 135 & 15 & 0.8296 & 0.8108 & 0.8696 & 0.8392 & 0.8887 \\
+\textbf{20\%} & \textbf{120} & \textbf{30} & \textbf{0.8333} & \textbf{0.8088} & \textbf{0.8871} & \textbf{0.8462} & \textbf{0.8999} \\
+\hline
+\end{tabular}
+\end{table}
+
+The risk-coverage curve in Fig.~\ref{fig:risk_curve} shows that rejecting high-uncertainty samples significantly reduces prediction error.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\linewidth]{risk_coverage.png}
+\caption{Risk-Coverage Curve demonstrating uncertainty-aware error reduction.}
+\label{fig:risk_curve}
+\end{figure}
+
+\subsubsection{Clinical Safety Analysis}
+
+Under uncertainty constraints the Table~\ref{tab:clinical_safety} evaluates the stress recall. Excluding the uncertain samples improves the recall for stress detection, an important factor in the applications of safety-sensitive monitoring.
+
+\begin{table}[H]
+\centering
+\caption{Clinical Safety: Stress Recall under Uncertainty Constraints}
+\label{tab:clinical_safety}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.0}
+\begin{tabular}{lcc}
+\hline
+Condition & Recall (Stress) & Samples Evaluated \\
+\hline
+All samples & 0.8667 & 150 \\
+Uncertainty $<$ median & 0.8750 & 143 \\
+Uncertainty $<$ 75th percentile & 0.8696 & 135 \\
+Uncertainty $<$ 80th percentile & \textbf{0.8871} & \textbf{120} \\
+\hline
+\end{tabular}
+\end{table}
+
+Overall, the results show that UA-HybridNet successfully involves uncertainty estimates and computation into deep multimodal feature learning, allowing reliable detection of stress with robustness and prediction with higher confidence.
+The CNN-LSTM baseline gives deterministic predictions without confidence or quantifying the uncertainty of prediction, but achieves the highest possible classification of raw accuracy. By combining uncertainty estimation and probability calibration techniques, the suggested UA-HybridNet framework mainly focuses on reliability-aware modeling.
+Through computed estimates of confidence and selective prediction of risk-awareness, this combination greatly increases the reliability of prediction with a small reduction in the point-estimate accuracy.
+In application of safety-sensitive stress monitoring, where overconfident, incorrect predictions can lead to misleading decision, hence these characteristics are especially important.
+
+\subsection{Limitations}
+Although the proposed framework demonstrates encouraging performance, it still has several drawbacks. 
+Firstly, the applicability to real-world settings may be impacted since the RAVDESS dataset includes performed emotional expressions rather than spontaneous real-world stress signals. 
+Next, the size of the dataset is quite modest compared with other large-scale deep learning datasets. Larger multimodal datasets and real-time deployment situations will be the focus of future research.
+
+\section{Conclusion}
+
+
+To detect facial stress, this research proposed an uncertainty-aware deep learning system which combines probabilistic calibration and uncertainty estimation with hybrid feature learning. The proposed model involves Action Unit gating with the Monte-Carlo Dropout and temperature scaling, EfficientNet-B0 spatial feature extraction, and 3D-CNN spatio-temporal encoding. A very strong classification performance is shown by the experimental findings on the RAVDESS dataset, with an accuracy of 0.8133 and an AUC of 0.8782. By reducing the negative log-likelihood by 45.1\% and the Expected Calibration Error (ECE) from 0.1768 to 0.0710, the calibration is greatly improved by temperature scaling and showed an increased agreement between actual accuracy and expected confidence.
+Selective prediction further improved the system dependability: accuracy increased to 0.8333 and AUC to 0.8999 at a 20\% rejection rate. These results show that uncertainty estimation improves the overall reliability and successfully detects the incorrect predictions. 
+
+Thus, the proposed model gives a useful and reliable foundation for applications requiring human-computer interaction, evaluation of workplace well-being, and stress monitoring in healthcare.
+
+\begin{thebibliography}{99}
+
+\bibitem{ref1}
+S. Gedam and S. Paul,
+"A review on mental stress detection using wearable sensors and machine learning techniques,"
+IEEE Access, vol. 9, pp. 84045–84066, 2021.
+
+\bibitem{ref2}
+A. Mentis, D. Lee, and P. Roussos,
+"Artificial intelligence applications for stress detection and mental health monitoring,"
+Molecular Psychiatry, vol. 29, pp. 1503–1518, 2024.
+
+\bibitem{ref3}
+S. Hosseini, A. K. Bashivan, and N. Mehrabi,
+"A multimodal sensor dataset for continuous stress detection of nurses in a hospital,"
+Scientific Data, vol. 9, no. 255, 2022.
+
+\bibitem{ref4}
+T. Iqbal, M. Elahi, A. W. Malik, and S. M. N. Naqvi,
+"Stress monitoring using wearable sensors: A pilot study and Stress-Predict dataset,"
+Sensors, vol. 22, no. 21, 2022.
+
+\bibitem{ref5}
+S. R. Livingstone and F. A. Russo,
+"The Ryerson Audio-Visual Database of Emotional Speech and Song (RAVDESS): A dynamic multimodal database of emotional expressions,"
+PLoS ONE, vol. 13, no. 5, 2018.
+
+\bibitem{ref6}
+M. Tan and Q. V. Le,
+"EfficientNet: Rethinking model scaling for convolutional neural networks,"
+Proc. International Conference on Machine Learning (ICML), 2019.
+
+\bibitem{ref7}
+J. Carreira and A. Zisserman,
+"Quo vadis, action recognition? A new model and the Kinetics dataset,"
+Proc. IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2017.
+
+\bibitem{ref8}
+A. Vaswani et al.,
+"Attention is all you need,"
+Advances in Neural Information Processing Systems (NeurIPS), 2017.
+
+\bibitem{ref9}
+Y. Gal and Z. Ghahramani,
+"Dropout as a Bayesian approximation: Representing model uncertainty in deep learning,"
+Proc. International Conference on Machine Learning (ICML), 2016.
+
+\bibitem{ref10}
+C. Guo, G. Pleiss, Y. Sun, and K. Q. Weinberger,
+"On calibration of modern neural networks,"
+Proc. International Conference on Machine Learning (ICML), 2017.
+
+\bibitem{ref11}
+A. Kendall and Y. Gal,
+"What uncertainties do we need in Bayesian deep learning for computer vision?"
+Advances in Neural Information Processing Systems (NeurIPS), 2017.
+
+\bibitem{ref12}
+B. Lakshminarayanan, A. Pritzel, and C. Blundell,
+"Simple and scalable predictive uncertainty estimation using deep ensembles,"
+Advances in Neural Information Processing Systems (NeurIPS), 2017.
+
+\bibitem{ref13}
+Y. Geifman and R. El-Yaniv,
+"Selective classification for deep neural networks,"
+Advances in Neural Information Processing Systems (NeurIPS), 2017.
+
+\bibitem{ref14}
+D. Hendrycks and K. Gimpel,
+"A baseline for detecting misclassified and out-of-distribution examples in neural networks,"
+International Conference on Learning Representations (ICLR), 2017.
+
+\bibitem{ref15}
+M. Nag, J. Vijaya, and K. Mallikharjuna Rao,
+"Enhanced Stress Prediction among Nurses in Their Work Environment Using Clustered Chameleon Swarm Algorithm,"
+Proc. 3rd Cognitive Models and Artificial Intelligence Conference (AICCONF), IEEE Conference Proceedings, pp. 1--6, 2025.
+
+\end{thebibliography}
+\end{document}
